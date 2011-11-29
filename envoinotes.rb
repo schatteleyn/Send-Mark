@@ -1,10 +1,17 @@
+#!/usr/local/bin/ruby
+
 require 'net/smtp'
 require 'csv'
+require 'io/console'
 
 def send_email(subject, toaddr, studentName, note)
+	#Name and adress of the expeditor
 	fromaddr = "<92824@supinfo.com>"
-	fromname = "Simon CHATTELEYN"
-	   
+	fromname = base64_encode("Simon CHATTELEYN")
+	
+	subject = base64_encode(subject)
+	
+	#Definition of message body
 	message = "Bonjour #{nameStudent},\n\n"
 		if note == "absent"
 			message += "Voici ta note : #{note}"
@@ -12,14 +19,27 @@ def send_email(subject, toaddr, studentName, note)
 			message += "Voici ta note : #{note}/20"
 	message += "\n\nCordialement,\nSimon Chatteleyn"
 	
-	msg = "From: #{fromname} Subject: #{subject} X-Mailer: Ruby smtp\r\nContent-Type: text/plain; charset=\"utf-8\"\r\n\r\n" + message
-	Net::SMTP.start('pod51002.outlook.com', 587) do |smtp|
-		smtp.send_message msg, fromaddr, to
-	end
+	#Headers + message
+	msg = "From: #{fromname} Subject: #{subject} X-Mailer: Ruby smtp\r\nContent-Type: text/plain; charset=\"utf-8\"\r\n\r\n #{message}"
+	
+	#Send the mail
+	puts "Sending to #{toaddr}"
+	smtp.send_message msg, fromaddr, to
+	puts "Email sent !"
 end
 
+#Ask for the mail's subject
 puts "Sujet du mail: "
 	subject = gets.chomp
-	
-getNote = CSV::Reader.parse(File.open('notes.csv', 'rb')).each do |row|
-	send_email(subject, row[0], row[1], row[2])
+
+#Work only with Ruby 1.9.3, use stty -echo if not using this version
+print "SMTP account's password: "
+	pwd = $stdin.getch.chomp
+
+
+#Open SMTP connection
+#Net::SMTP.start('your.smtp.server', 25, 'mail.from.domain','Your Account', 'Your Password', :plain OR :login OR :cram_md5)
+Net::SMTP.start('pod51002.outlook.com', 587, 'outlook.com', '92824@supinfo.com', '#{pwd}', :login) do |smtp|
+	getNote = CSV::Reader.parse(File.open('notes.csv', 'rb')).each do |row|
+		send_email(subject, row[0], row[1], row[2])
+end
