@@ -24,8 +24,14 @@ def send_email(subject, toaddr, studentName, note)
 	
 	#Send the mail
 	puts "Sending to #{toaddr}"
-	smtp.send_message msg, fromaddr, to
-	puts "Email sent !"
+	begin
+		email = smtp.send_message msg, fromaddr, to
+		if email
+			puts "Email sent !"
+	rescue
+		puts "Something went wrong. The mail haven't been send to id " + row[0]
+	end
+	
 end
 
 #Ask for the mail's subject
@@ -40,6 +46,10 @@ print "SMTP account's password: "
 #Open SMTP connection
 #Net::SMTP.start('your.smtp.server', 25, 'mail.from.domain','Your Account', 'Your Password', :plain OR :login OR :cram_md5)
 Net::SMTP.start('pod51002.outlook.com', 587, 'outlook.com', '92824@supinfo.com', '#{pwd}', :login) do |smtp|
-	getNote = CSV::Reader.parse(File.open('notes.csv', 'rb')).each do |row|
+	begin
+		getNote = CSV::Reader.parse(File.open('notes.csv', 'rb', ';')).each do |row|
+	rescue
+		puts "Fichier introuvable. Vérifier le nom ou la localisation"
+	end
 		send_email(subject, row[0], row[1], row[2])
 end
